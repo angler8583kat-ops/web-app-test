@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>工数記録テスト</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+  <h2>工数記録テスト</h2>
+
+  <!-- QRコード読み取り -->
+  <div id="qr-reader" style="width:300px;"></div>
+  <p>読み取った注番: <span id="job-number">未取得</span></p>
+
+  <!-- 時刻記録ボタン -->
+  <button onclick="recordStartTime()">作業開始</button>
+  <span id="start-time-display">未記録</span><br>
+
+  <button onclick="recordEndTime()">作業終了</button>
+  <span id="end-time-display">未記録</span><br><br>
+
+  <button onclick="generateCSV()">CSV生成</button>
+  <p><a id="download-link" style="display:none;">CSVをダウンロード</a></p>
+
+  <script>
+    let jobNumber = "";
+    let startTime = "";
+    let endTime = "";
+
+    // ページ読み込み後にQRコード読み取りを初期化
+    window.onload = () => {
+      const qrReader = new Html5Qrcode("qr-reader");
+      qrReader.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        qrCodeMessage => {
+          jobNumber = qrCodeMessage;
+          document.getElementById("job-number").textContent = jobNumber;
+          qrReader.stop(); // 一度読み取ったら停止
+        },
+        errorMessage => {
+          console.warn("読み取り失敗:", errorMessage);
+        }
+      );
+    };
+
+    // 開始時刻を記録
+    function recordStartTime() {
+      const now = new Date();
+      startTime = now.toTimeString().slice(0, 5); // HH:MM形式
+      document.getElementById("start-time-display").textContent = startTime;
+    }
+
+    // 終了時刻を記録
+    function recordEndTime() {
+      const now = new Date();
+      endTime = now.toTimeString().slice(0, 5);
+      document.getElementById("end-time-display").textContent = endTime;
+    }
+
+    // CSV生成処理
+    function generateCSV() {
+      if (!jobNumber || !startTime || !endTime) {
+        alert("すべての項目を記録してください");
+        return;
+      }
+
+      const csvContent = `${jobNumber},${startTime},${endTime}\n`;
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.getElementById("download-link");
+      link.href = url;
+      link.download = `工数記録_${jobNumber}.csv`;
+      link.style.display = "inline";
+      link.textContent = "CSVをダウンロード";
+    }
+  </script>
+</body>
+</html>
